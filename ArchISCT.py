@@ -14,18 +14,20 @@ def command(command):
 def archroot(command):
 	global installString
 	installString += "arch-chroot /mnt " + command + "\n"
-
-
 def kernelParameter(parameter):
 	global kernelParameters
 	global usingKernelParameters
 	usingKernelParameters = 1
 	kernelParameters += " " + parameter
-	
-	
 def installPackages(packages):
 	global installString
 	installString += "arch-chroot /mnt pacman -S --noconfirm " + packages + "\n"
+def enable(service):
+	global installString
+	installString += "arch-chroot /mnt systemctl enable " + service + "\n"
+def echo(text):
+	global installString
+	installString += "echo " + text + "\n"
 
 print("Starting script creation process...")
 
@@ -102,10 +104,10 @@ command("pacstrap /mnt base " + kernelString + firmwareString + " nano")
 command("genfstab -U /mnt >> /mnt/etc/fstab")
 archroot("timedatectl set-timezone America/Los_Angeles")
 archroot("ln -sf /usr/share/zoneinfo/America/Los_Angeles /etc/localtime")
-command("echo en_US.UTF-8 UTF-8 > /mnt/etc/locale.gen")
-command("echo LANG=en_US.UTF-8 > /mnt/etc/locale.conf")
+echo("en_US.UTF-8 UTF-8 > /mnt/etc/locale.gen")
+echo("LANG=en_US.UTF-8 > /mnt/etc/locale.conf")
 archroot("locale-gen")
-command("echo " + hostname + " > /mnt/etc/hostname")
+echo("" + hostname + " > /mnt/etc/hostname")
 archroot("hostnamectl set-hostname " + hostname)
 archroot("passwd --lock root")
 
@@ -119,20 +121,20 @@ if (microcode == "y"):
 #Install and enable ufw if firewall is selected
 if (firewall == "y"):
 	installPackages("ufw")
-	 archroot("systemctl enable ufw")
-	 archroot("ufw enable")
+	enable("ufw")
+	archroot("ufw enable")
 
 #Create the user if selected
 if (user == "y"):
 	installPackages("doas")
 	archroot("useradd -m " + username)
-	command("echo 'permit " + username + " as root' > /mnt/etc/doas.conf")
+	echo("'permit " + username + " as root' > /mnt/etc/doas.conf")
 	archroot("passwd " + username)
 
 #Install and enable apparmor
 if (apparmor == "y"):
 	 installPackages("apparmor")
-	 archroot("systemctl enable apparmor")
+	 enable("apparmor")
 	 kernelParameter("lsm=lockdown,yama,apparmor,bpf")
 
 #Setup the bootloader(grub)
@@ -150,22 +152,22 @@ if (usingKernelParameters == 1):
 
 #Setup networking with connman(connection manager)
 installPackages("connman")
-archroot("systemctl enable connman")
+enable("connman")
 
 #Install awesome firefox, and vim if wanted
 if (awesome == "y"):
-	 installPackages("awesome xorg-xinit xorg")
+	installPackages("awesome xorg-xinit xorg")
 	if (firefox == "y"):
 		installPackages("firefox pulseaudio pavucontrol firefox-ublock-origin firefox-extension-https-everywhere")
-	command("echo 'awesome' > /mnt/home/" + username + "/.xinitrc")
-	command("echo 'startx - --keeptty &> ~/.xorg.log' >> /mnt/home/" + username + "/.bash_profile")
+	echo("'awesome' > /mnt/home/" + username + "/.xinitrc")
+	echo("'startx - --keeptty &> ~/.xorg.log' >> /mnt/home/" + username + "/.bash_profile")
 	if (vim == "y"):
 		installPackages("vim vim-jedi vim-gitgutter vim-vital")
 
 #Install packages to allow machine to be a virtualization host utilizing qemu, kvm, and libvirt
 if (kvmhost == "y"):
 	installPackages("libvirt qemu openbsd-netcat ebtables dnsmasq bridge-utils")
-	archroot("systemctl enable libvirtd")
+	enable("libvirtd")
 
 #Install and configure firejail
 if (firejail == "y"):
@@ -173,7 +175,7 @@ if (firejail == "y"):
 	archroot("firecfg")
 
 #Alert the user that the installation has finished
-command("echo INSTALLATION FINISHED!")
+echo("INSTALLATION FINISHED!")
 
 #Write installString to a file
 scriptFile = open("ArchInstallScript.bash", "w")
