@@ -48,8 +48,7 @@ firewall = ask("if firewall is needed","y/n")
 user = "y"
 username = ask("Username?", "Example: archuser")
 apparmor = ask("whether to install and enable apparmor", "y/n")
-if (apparmor == "y"):
- 	firejail = ask("whether to install firejail", "y/n")
+firejail = ask("whether to install firejail", "y/n")
 awesome = ask("whether to install awesome wm and start on login", "y/n")
 if (awesome == "y"):
 	firefox = ask("whether to install firefox", "y/n")
@@ -148,7 +147,9 @@ else:
 #Add kernel parameters before making grub config file
 if (usingKernelParameters == 1):
 	 command("sed -i 's/loglevel=3 quiet/loglevel=3 quiet" + kernelParameters +"/' /mnt/etc/default/grub")
-	 archroot("grub-mkconfig -o /boot/grub/grub.cfg")
+
+#Create grub config file
+archroot("grub-mkconfig -o /boot/grub/grub.cfg")
 
 #Setup networking with connman(connection manager)
 installPackages("connman")
